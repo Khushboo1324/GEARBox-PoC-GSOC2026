@@ -23,7 +23,7 @@ export function SearchCriteriaBox({
   dataset,
   searchContext = 'Adult',
   placeholder = 'Search gene, lab, demographic, category, id…',
-  label = 'Search clinical criteria',
+  label = 'Search with clinical criteria',
 }: SearchCriteriaBoxProps) {
   const [search, setSearch] = useState('');
   const { filteredResults, isLoading, error } = useSearchCriteria(search, dataset);

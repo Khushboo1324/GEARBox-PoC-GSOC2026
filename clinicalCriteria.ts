@@ -43,7 +43,7 @@ export type MockClinicalCriteriaOptions = {
   startIndex?: number;
 };
 
-const CATEGORY_LABELS = ['Eligibility', 'Exclusion', 'Biomarker', 'History', 'Treatment'] as const;
+const CATEGORY_LABELS = ['Eligibility', 'Exclusion', 'Biomarker', 'History', 'Treatment','Pediatric'] as const;
 
 const GENES = [
   'BRCA1',
@@ -84,13 +84,11 @@ function pick<T>(arr: readonly T[], n: number): T {
   return arr[n % arr.length];
 }
 
-// Box-Muller transform (deterministic-ish from index) to get a pseudo-normal-ish number.
 function pseudoNormal(index: number): number {
-  // Create two pseudo-uniform numbers in (0,1)
-  const u1 = ((Math.sin(index * 12.9898) * 43758.5453) % 1 + 1) % 1;
-  const u2 = ((Math.sin((index + 1) * 78.233) * 96234.876) % 1 + 1) % 1;
-  const r = Math.sqrt(-2.0 * Math.log(Math.max(u1, 1e-12)));
-  const theta = 2.0 * Math.PI * u2;
+  const u1=((Math.sin(index * 12.9898) * 43758.5453) % 1 + 1) % 1;
+  const u2= ((Math.sin((index + 1) * 78.233) * 96234.876) % 1 + 1) % 1;
+  const r= Math.sqrt(-2.0 * Math.log(Math.max(u1, 1e-12)));
+  const theta= 2.0 * Math.PI * u2;
   return r * Math.cos(theta);
 }
 
@@ -100,23 +98,23 @@ function makeId(i: number): string {
 
 function makeGenomic(i: number): GenomicCriteria {
   return {
-    id: makeId(i),
-    category: pick(CATEGORY_LABELS, i),
-    kind: 'GENOMIC',
-    geneName: pick(GENES, i),
-    mutationType: pick(MUTATIONS, i * 7),
-    isPresent: i % 3 !== 0,
+    id:makeId(i),
+    category:pick(CATEGORY_LABELS, i),
+    kind:'GENOMIC',
+    geneName:pick(GENES, i),
+    mutationType:pick(MUTATIONS, i * 7),
+    isPresent: i % 3!== 0,
   };
 }
 
 function makeLabValue(i: number): LabValueCriteria {
-  const test = pick(LAB_TESTS, i);
-  const z = pseudoNormal(i);
-  const value = test.mean + z * test.sd;
+  const test= pick(LAB_TESTS, i);
+  const z =pseudoNormal(i);
+  const value= test.mean + z * test.sd;
 
   return {
     id: makeId(i),
-    category: pick(CATEGORY_LABELS, i),
+    category:pick(CATEGORY_LABELS, i),
     kind: 'LAB_VALUE',
     testName: test.name,
     numericValue: Number(value.toFixed(2)),
@@ -126,32 +124,30 @@ function makeLabValue(i: number): LabValueCriteria {
 }
 
 function makeDemographic(i: number): DemographicCriteria {
-  const spec = pick(DEMO_ATTRS, i);
+  const spec =pick(DEMO_ATTRS, i);
   return {
     id: makeId(i),
-    category: pick(CATEGORY_LABELS, i),
+    category:pick(CATEGORY_LABELS, i),
     kind: 'DEMOGRAPHIC',
-    attribute: spec.attribute,
+    attribute:spec.attribute,
     value: pick(spec.values, i * 11),
   };
 }
 
-/**
- * Create a list of mock `ClinicalCriteria` items.
- *
- * The generator is deterministic (based on index), which helps with reproducible tests.
- */
+
+//   Create a list of mock `ClinicalCriteria` items.
+//  The generator is deterministic (based on index), which helps with reproducible tests.
 export function createMockClinicalCriteria(
   options: MockClinicalCriteriaOptions = {},
 ): ClinicalCriteria[] {
   const { count = 5000, startIndex = 0 } = options;
   const items: ClinicalCriteria[] = new Array(count);
 
-  for (let n = 0; n < count; n++) {
-    const i = startIndex + n;
-    const mod = i % 3;
+  for (let n =0; n <count; n++) {
+    const i= startIndex +n;
+    const mod= i % 3;
 
-    items[n] = mod === 0 ? makeGenomic(i) : mod === 1 ? makeLabValue(i) : makeDemographic(i);
+    items[n] =mod === 0 ? makeGenomic(i) : mod=== 1 ? makeLabValue(i) : makeDemographic(i);
   }
 
   return items;

@@ -6,7 +6,7 @@ import type { ClinicalCriteria } from './clinicalCriteria';
 export type CriteriaListProps = {
   filteredResults: readonly ClinicalCriteria[];
   isLoading: boolean;
-  /** The current search context used to detect Pediatric vs Adult conflicts.*/
+  /** The current search context used to detect Pediatric vs Adult conflicts. */
   searchContext?: 'Adult' | 'Pediatric';
   /** The id used by the search input for aria-controls. */
   listId?: string;
@@ -50,60 +50,79 @@ function formatCriteriaMeta(c: ClinicalCriteria): string {
 
 function Row({ index, style, data, ariaAttributes }: RowComponentProps<RowProps>) {
   const c = data.items[index];
-  const hasContextConflict = data.searchContext === 'Adult' && c.category === 'Pediatric';
 
-  const variant = (() => {
-    switch (c.kind) {
-      case 'GENOMIC':
-        return {
-          pill: 'bg-blue-50 text-blue-700 border-blue-200',
-          border: 'border-blue-200',
-        };
-      case 'LAB_VALUE':
-        return {
-          pill: 'bg-slate-50 text-slate-700 border-slate-200',
-          border: 'border-slate-200',
-        };
-      case 'DEMOGRAPHIC':
-        return {
-          pill: 'bg-teal-50 text-teal-700 border-teal-200',
-          border: 'border-teal-200',
-        };
-      default:
-        return {
-          pill: 'bg-slate-50 text-slate-700 border-slate-200',
-          border: 'border-slate-200',
-        };
-    }
-  })();
+  // Prefer requested `ageGroup` field if present; fall back to `category` (current mock model).
+  const ageGroup = (c as Partial<{ ageGroup: 'Adult' | 'Pediatric' }>).ageGroup;
+
+  const hasContextConflict =
+    data.searchContext === 'Adult' && (ageGroup ? ageGroup === 'Pediatric' : c.category === 'Pediatric');
+
+  const badgeStyle = hasContextConflict
+    ? 'bg-slate-200 text-slate-500 border-slate-600'
+    : (() => {
+        switch (c.kind) {
+          case 'GENOMIC':
+            return 'bg-blue-50 text-blue-700 border-blue-200';
+          case 'LAB_VALUE':
+            return 'bg-slate-50 text-slate-700 border-slate-200';
+          case 'DEMOGRAPHIC':
+            return 'bg-teal-50 text-teal-700 border-teal-200';
+          default: {
+            const _exhaustive: never = c;
+            return _exhaustive;
+          }
+        }
+      })();
 
   return (
     <div
       style={style}
-      className={cx('px-3 py-2', hasContextConflict && 'cursor-not-allowed opacity-60')}
+      className={cx('px-3 py-2', hasContextConflict && 'select-none')}
       title={hasContextConflict ? 'Not applicable: Pediatric criterion in Adult context.' : undefined}
       aria-disabled={hasContextConflict}
       {...ariaAttributes}
     >
       <div
         className={cx(
-          'h-full rounded-md border bg-white px-3 py-2',
-          'shadow-[0_1px_0_rgba(15,23,42,0.04)]',
+          'relative h-full  w-full rounded-md border px-3 py-2 pr-4',
+          hasContextConflict
+            ? 'bg-slate-50 border-slate-200 opacity-60 cursor-not-allowed select-none grayscale-[0.4]'
+            : 'bg-white border-slate-200 shadow-sm',
           'flex flex-col justify-center gap-1',
-          variant.border,
-          hasContextConflict && 'bg-slate-50',
         )}
       >
-        <div className="flex items-center justify-between gap-3">
+        {hasContextConflict ? (
+        <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none bg-white/70">
+        <div className=" translate-x-[650px] rounded border border-slate-400 bg-slate-200 px-3 py-1 text-xs font-semibold tracking-wide text-slate-700 whitespace-nowrap shadow-sm">
+            INCOMPATIBLE
+        </div>
+        </div>
+        ) : null}
+
+        <div className="flex items-center justify-between gap-3 pr-2">
           <div className="min-w-0">
-            <div className="truncate text-sm font-medium text-slate-900">{formatCriteriaTitle(c)}</div>
-            <div className="truncate text-xs text-slate-500">{formatCriteriaMeta(c)}</div>
+            <div
+              className={cx(
+                'truncate text-sm font-medium',
+                hasContextConflict ? 'text-slate-500' : 'text-slate-900',
+              )}
+            >
+              {formatCriteriaTitle(c)}
+            </div>
+            <div
+              className={cx(
+                'truncate text-xs',
+                hasContextConflict ? 'text-slate-400 italic' : 'text-slate-500',
+              )}
+            >
+              {formatCriteriaMeta(c)}
+            </div>
           </div>
 
           <span
             className={cx(
-              'shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-semibold tracking-wide',
-              variant.pill,
+              'shrink-0 rounded-md border px-2 py-0.5 text-[11px] font-semibold tracking-wide translate-x-[-5px]',
+              badgeStyle,
             )}
           >
             {c.kind}
